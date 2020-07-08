@@ -5,7 +5,7 @@ Prerequisite
 - ReadWriteMany storage
 - Openshift Virtualization enabled https://docs.openshift.com/container-platform/4.4/cnv/cnv_install/installing-container-native-virtualization.html 
 
-
+   ```sh
 
 # oc new-project guestbook 
 # cul -OLJ  https://cloud.centos.org/centos/8/x86_64/images/CentOS-8-GenericCloud-8.1.1911-20200113.3.x86_64.qcow2
@@ -13,3 +13,4 @@ Prerequisite
 # oc create -f centosdv.yaml 
 # oc create -f xxxxxx/guestbooktemplate.yaml
 
+   ```
