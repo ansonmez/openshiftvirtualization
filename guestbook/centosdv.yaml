@@ -1,0 +1,16 @@
+apiVersion: cdi.kubevirt.io/v1alpha1
+kind: DataVolume
+metadata:
+  name: centos-qcow2
+  namespace: guestbook
+spec:
+  source:
+    pvc:
+      namespace: guestbook
+      name: centos8
+  pvc:
+    accessModes:
+      - ReadWriteMany
+    resources:
+      requests:
+        storage: 5Gi

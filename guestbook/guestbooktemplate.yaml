@@ -1,0 +1,204 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: guestbook-demo-cnv-multi-tier
+  annotations:
+    openshift.io/display-name: "Guestbook Demo - Multi tier with CNV"
+    description: >-
+      This template can be used to create a multi-tier app containing a VM and
+      couple of Pods.
+    tags: "kubevirt,virtualmachine,linux,centos,guestbook"
+
+    iconClass: "icon-centos"
+    openshift.io/provider-display-name: "KubeVirt"
+    openshift.io/documentation-url: "https://github.com/kubevirt/common-templates"
+    openshift.io/support-url: "https://github.com/kubevirt/common-templates/issues"
+    template.openshift.io/bindable: "true"
+
+    emplate.kubevirt.io/version: v1alpha1
+    defaults.template.kubevirt.io/disk: rootdisk
+    template.kubevirt.io/editable: |
+      /objects[0].spec.template.spec.domain.cpu.sockets
+      /objects[0].spec.template.spec.domain.cpu.cores
+      /objects[0].spec.template.spec.domain.cpu.threads
+      /objects[0].spec.template.spec.domain.resources.requests.memory
+      /objects[0].spec.template.spec.domain.devices.disks
+      /objects[0].spec.template.spec.volumes
+      /objects[0].spec.template.spec.networks
+    name.os.template.kubevirt.io/centos8.0: CentOS 8.0
+
+  labels:
+    os.template.kubevirt.io/centos8.0: "true"
+    workload.template.kubevirt.io/server: "true"
+    flavor.template.kubevirt.io/tiny: "true"
+    template.kubevirt.io/type: "base"
+
+objects:
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: redis-master
+    labels:
+      name: redis-master
+  spec:
+    ports:
+      # the port that this service should serve on
+    - port: 6379
+      targetPort: 6379
+    selector:
+      vm.kubevirt.io/name: redis-master
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: redis-slave
+    labels:
+      name: redis-slave
+  spec:
+    ports:
+      # the port that this service should serve on
+    - port: 6379
+    selector:
+      name: redis-slave
+
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: frontend
+  spec:
+    ports:
+      - protocol: TCP
+        port: 80
+        targetPort: 8080
+    selector:
+      name: frontend
+    type: ClusterIP
+    sessionAffinity: None
+
+- kind: Route
+  apiVersion: route.openshift.io/v1
+  metadata:
+    name: ${NAME}
+  spec:
+    to:
+      kind: Service
+      name: frontend
+      weight: 100
+    port:
+      targetPort: 8080
+    wildcardPolicy: None
+
+- apiVersion: v1
+  kind: ReplicationController
+  metadata:
+    name: redis-slave
+    labels:
+      name: redis-slave
+  spec:
+    replicas: 2
+    selector:
+      name: redis-slave
+    template:
+      metadata:
+        labels:
+          name: redis-slave
+      spec:
+        containers:
+        - name: worker
+          image: 192.168.191.101:5000/redis-slave:5.0.7
+          env:
+          - name: GET_HOSTS_FROM
+            value: dns
+          ports:
+          - containerPort: 6379
+
+- apiVersion: v1
+  kind: ReplicationController
+  metadata:
+    name: frontend
+    labels:
+      name: frontend
+  spec:
+    replicas: 3
+    selector:
+      name: frontend
+    template:
+      metadata:
+        labels:
+          name: frontend
+      spec:
+        containers:
+        - name: php-redis
+          image: 192.168.191.101:5000/php-redis:2.2
+          env:
+          - name: GET_HOSTS_FROM
+            value: dns
+          ports:
+          - containerPort: 8080
+
+- apiVersion: kubevirt.io/v1alpha3
+  kind: VirtualMachine
+  metadata:
+    name: redis-master
+    labels:
+      vm.kubevirt.io/template: redis-master-on-vm
+      vm.kubevirt.io/name: redis-master
+      app: redis-master
+  spec:
+    running: true
+    template:
+      metadata:
+        labels:
+          kubevirt.io/domain: redis-master
+          vm.kubevirt.io/name: redis-master
+          kubevirt.io/size: tiny
+
+      spec:
+        domain:
+          cpu:
+            sockets: 1
+            cores: 1
+            threads: 1
+          resources:
+            requests:
+              memory: 1G
+          devices:
+            rng: {}
+            disks:
+            - disk:
+                bus: virtio
+              name: rootdisk
+            - disk:
+                bus: virtio
+              name: cloudinitdisk
+            interfaces:
+            - bridge: {}
+              name: default
+        terminationGracePeriodSeconds: 0
+        networks:
+        - name: default
+          pod: {}
+        volumes:
+        - persistentVolumeClaim:
+            claimName: centos-qcow2
+          name: rootdisk
+        - cloudInitNoCloud:
+            userData: |-
+              #cloud-config
+              password: centos
+              chpasswd: { expire: False }
+              runcmd:
+                - yum install epel-release -y
+                - yum install redis  -y
+                - sed -i -e 's/appendonly no/appendonly yes/' -e 's/bind 127.0.0.1/bind 0.0.0.0/' /etc/redis.conf
+                - rm -f /var/lib/redis/*
+                - [ systemctl, enable, redis.service ]
+                - [ systemctl, start, redis.service ]
+          name: cloudinitdisk
+parameters:
+- description: Guest book name
+  from: 'guestbook-[a-z0-9]{16}'
+  generate: expression
+  name: NAME
+  required: true
