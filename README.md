@@ -1,9 +1,9 @@
 Demo environment preperation for Opeshift Virtualization 
-Prerequisite
+Prerequisites
 - Running Red Hat Openshift Platform 
-- On baremetal or nested virtualization enabled if running on virtual enviornment
-- ReadWriteMany storage
-- Openshift Virtualization enabled https://docs.openshift.com/container-platform/4.4/cnv/cnv_install/installing-container-native-virtualization.html 
+- On baremetal or nested virtualization enabled if running on virtual environment
+- ReadWriteMany storage backend
+- Openshift Virtualization enabled, https://docs.openshift.com/container-platform/4.4/cnv/cnv_install/installing-container-native-virtualization.html 
 
    ```sh
 
