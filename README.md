@@ -31,7 +31,8 @@ Get the route of guestbook application
 
    ```sh
    
-   oc logs -f redisXXXX 
+   # oc logs -f redisXXXX 
+   # oc get route -n guestbook
    
    ```
    
