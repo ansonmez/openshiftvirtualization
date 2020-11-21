@@ -106,7 +106,7 @@ objects:
       spec:
         containers:
         - name: worker
-          image: 192.168.191.101:5000/redis-slave:5.0.7
+          image: quay.io/asonmez/redis-follower:5.0.7
           env:
           - name: GET_HOSTS_FROM
             value: dns
@@ -130,7 +130,7 @@ objects:
       spec:
         containers:
         - name: php-redis
-          image: 192.168.191.101:5000/php-redis:2.2
+          image: quay.io/asonmez/php-redis:2.2
           env:
           - name: GET_HOSTS_FROM
             value: dns
