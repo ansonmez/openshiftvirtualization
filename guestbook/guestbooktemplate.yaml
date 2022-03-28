@@ -15,7 +15,7 @@ metadata:
     openshift.io/support-url: "https://github.com/kubevirt/common-templates/issues"
     template.openshift.io/bindable: "true"
 
-    emplate.kubevirt.io/version: v1alpha1
+    template.kubevirt.io/version: v1alpha1
     defaults.template.kubevirt.io/disk: rootdisk
     template.kubevirt.io/editable: |
       /objects[0].spec.template.spec.domain.cpu.sockets
@@ -31,7 +31,6 @@ metadata:
     os.template.kubevirt.io/centos8.0: "true"
     workload.template.kubevirt.io/server: "true"
     flavor.template.kubevirt.io/tiny: "true"
-    template.kubevirt.io/type: "base"
 
 objects:
 
@@ -137,7 +136,7 @@ objects:
           ports:
           - containerPort: 8080
 
-- apiVersion: kubevirt.io/v1alpha3
+- apiVersion: kubevirt.io/v1
   kind: VirtualMachine
   metadata:
     name: redis-master
